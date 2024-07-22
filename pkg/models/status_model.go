@@ -3,8 +3,9 @@ package models
 import (
 	"database/sql"
 	"fmt"
-	"project-root/internal/database"
-	"project-root/internal/status"
+
+	"github.com/korentmaj/go-ecdsa-status-netis-challenge/internal/database"
+	"github.com/korentmaj/go-ecdsa-status-netis-challenge/internal/status"
 )
 
 func GetStatus(statusId string) (*status.StatusList, error) {

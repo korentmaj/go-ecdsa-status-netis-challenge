@@ -1,4 +1,4 @@
-package handlers
+package api
 
 import (
 	"encoding/json"
@@ -7,10 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"project-root/internal/status"
-	"project-root/pkg/models"
-
 	"github.com/gorilla/mux"
+	"github.com/korentmaj/go-ecdsa-status-netis-challenge/internal/status"
+	"github.com/korentmaj/go-ecdsa-status-netis-challenge/pkg/models"
 )
 
 func GetStatus(w http.ResponseWriter, r *http.Request) {

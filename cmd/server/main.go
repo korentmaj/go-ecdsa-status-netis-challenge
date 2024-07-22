@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"project-root/internal/api"
-	"project-root/internal/crypto"
-	"project-root/internal/database"
+
+	"github.com/korentmaj/go-ecdsa-status-netis-challenge/internal/api"
+	"github.com/korentmaj/go-ecdsa-status-netis-challenge/internal/crypto"
+	"github.com/korentmaj/go-ecdsa-status-netis-challenge/internal/database"
 )
 
 func main() {
