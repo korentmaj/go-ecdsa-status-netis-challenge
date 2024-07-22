@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -14,6 +15,64 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
+// Status represents the status structure in the payload
+type Status struct {
+	EncodedList string `json:"encodedList"`
+	Index       int    `json:"index"`
+}
+
+// JWSResponse represents the structure of the JWS payload
+type JWSResponse struct {
+	IssuedAt  int64  `json:"iat"`
+	ExpiresAt int64  `json:"exp"`
+	Issuer    string `json:"iss"`
+	Status    Status `json:"status"`
+}
+
+// ParseJWSResponse parses the JWS response body and validates the signature
+func ParseJWSResponse(body []byte, publicKey *ecdsa.PublicKey) (Status, error) {
+	// Convert the body to a string
+	bodyStr := string(body)
+
+	// Parse the JWS token
+	token, err := jwt.Parse(bodyStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return publicKey, nil
+	})
+
+	if err != nil {
+		return Status{}, err
+	}
+
+	// Validate the token
+	if !token.Valid {
+		return Status{}, errors.New("invalid token")
+	}
+
+	// Extract the claims
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return Status{}, errors.New("invalid claims")
+	}
+
+	// Convert claims to JSON
+	claimsJSON, err := json.Marshal(claims)
+	if err != nil {
+		return Status{}, err
+	}
+
+	// Unmarshal the JSON into JWSResponse struct
+	var response JWSResponse
+	err = json.Unmarshal(claimsJSON, &response)
+	if err != nil {
+		return Status{}, err
+	}
+
+	return response.Status, nil
+}
 
 // Function to make an HTTP GET request to the specified URL and return the boolean status.
 func GetStatusFromJWS(url string, publicKey *ecdsa.PublicKey) (bool, error) {

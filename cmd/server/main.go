@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -68,7 +69,30 @@ func main() {
 		log.Fatalf("Error parsing public key: %v", err)
 	}
 
-	status, err := crypto.GetStatusFromJWS(url, publicKey)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatalf("Error creating request: %v", err)
+	}
+	// Add Basic Authentication header
+	req.SetBasicAuth("your_username", "your_password") // Replace with actual credentials
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("Error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Error getting status from JWS: received non-OK HTTP status: %s", resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Error reading response body: %v", err)
+	}
+
+	status, err := crypto.ParseJWSResponse(body, publicKey)
 	if err != nil {
 		log.Fatalf("Error getting status from JWS: %v", err)
 	}
