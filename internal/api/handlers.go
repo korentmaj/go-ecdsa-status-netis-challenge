@@ -1,8 +1,10 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -15,7 +17,10 @@ import (
 func GetStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	statusId := vars["statusId"]
-	index, err := strconv.Atoi(vars["index"])
+	indexStr := r.URL.Query().Get("index")
+	log.Printf("Received request for statusId: %s, index: %s", statusId, indexStr)
+
+	index, err := strconv.Atoi(indexStr)
 	if err != nil {
 		http.Error(w, "Invalid index", http.StatusBadRequest)
 		return
@@ -23,7 +28,11 @@ func GetStatus(w http.ResponseWriter, r *http.Request) {
 
 	status, err := models.GetStatus(statusId)
 	if err != nil {
-		http.Error(w, "Status not found", http.StatusNotFound)
+		if err == sql.ErrNoRows {
+			http.Error(w, "Status not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to query status", http.StatusInternalServerError)
 		return
 	}
 
@@ -35,7 +44,7 @@ func GetStatus(w http.ResponseWriter, r *http.Request) {
 
 	iat := time.Now().Unix()
 	exp := time.Now().Add(24 * time.Hour).Unix()
-	domain := "example.com" // Replace with actual domain
+	domain := "localhost" // vstavi lastno domeno
 
 	payload := map[string]interface{}{
 		"iat": iat,

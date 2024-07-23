@@ -9,6 +9,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/korentmaj/go-ecdsa-status-netis-challenge/internal/api"
 	"github.com/korentmaj/go-ecdsa-status-netis-challenge/internal/crypto"
@@ -35,32 +38,53 @@ func ParseECDSAPublicKeyFromPEM(pemEncodedPubKey string) (*ecdsa.PublicKey, erro
 }
 
 func main() {
-	// Define your PostgreSQL credentials
-	dbUser := "ecdsa_user"
-	dbPassword := "ecdsa_password"
-	dbName := "ecdsadb"
+	// PostgreSQL podatki
+	dbUser := "user"
+	dbPassword := "pass"
+	dbName := "imebaze"
 	dbHost := "localhost"
 	dbPort := "5432"
 
-	// Construct the PostgreSQL connection string
+	// PostgreSQL connection string
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPassword, dbHost, dbPort, dbName)
 
-	// Initialize the database
+	// Inicializacija baze
 	if err := database.InitDB(connStr); err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	defer database.CloseDB()
 
-	// Set up the router and start the server
+	// Določi port
 	router := api.SetupRouter()
+	server := &http.Server{
+		Addr:    ":8000",
+		Handler: router,
+	}
+
+	// Graceful shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
-		log.Fatal(http.ListenAndServe(":8000", router))
+		log.Println("Starting server on :8000")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("ListenAndServe(): %v", err)
+		}
 	}()
 
-	// Example usage of GetStatusFromJWS
-	url := "http://localhost:8000/api/status/a_Q5JxCz#1"
+	<-stop
+	log.Println("Shutting down server...")
+
+	if err := server.Close(); err != nil {
+		log.Fatalf("Server Close(): %v", err)
+	}
+	log.Println("Server gracefully stopped")
+
+	// URL za: GetStatusFromJWS
+	url := "http://localhost:8000/api/status/testStatusId?index=1"
 	pemEncodedPublicKey := `
 -----BEGIN PUBLIC KEY-----
-
+//prilagodi ključ
 -----END PUBLIC KEY-----
 `
 
@@ -74,8 +98,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error creating request: %v", err)
 	}
-	// Add Basic Authentication header
-	req.SetBasicAuth("your_username", "your_password") // Replace with actual credentials
+
+	req.SetBasicAuth("user", "pass") // replace with actual credentials
 
 	resp, err := client.Do(req)
 	if err != nil {

@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
 
 	_ "github.com/lib/pq"
 )
@@ -20,5 +21,14 @@ func InitDB(dataSourceName string) error {
 		return fmt.Errorf("failed to connect to database: %v", err)
 	}
 
+	log.Println("Database connection established")
 	return nil
+}
+
+func CloseDB() {
+	if err := DB.Close(); err != nil {
+		log.Printf("Error closing database: %v", err)
+	} else {
+		log.Println("Database connection closed")
+	}
 }

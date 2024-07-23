@@ -22,7 +22,7 @@ func BasicAuth(next http.Handler) http.Handler {
 
 		encodedCredentials := strings.TrimPrefix(auth, prefix)
 		// Replace "username:password" with actual credentials or a verification function
-		expectedCredentials := "username:password"
+		expectedCredentials := "user:pass"
 		expectedEncodedCredentials := base64.StdEncoding.EncodeToString([]byte(expectedCredentials))
 
 		if encodedCredentials != expectedEncodedCredentials {
